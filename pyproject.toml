@@ -1,0 +1,18 @@
+[project]
+name = "SuperpixelSegmentation"
+version = "1.0.0"
+description = "Superpixel Segmentation Evaluation Framework"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "numpy",
+    "opencv-python",
+    "matplotlib",
+    "scikit-image",
+    "pandas",
+    "seaborn",
+    "joblib"
+]
+
+[tool.uv]
+package = false

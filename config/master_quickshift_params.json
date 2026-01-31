@@ -1,0 +1,87 @@
+{
+    "cwdb": {
+        "550": {
+            "kernel_size": 4,
+            "max_dist": 9
+        },
+        "275": {
+            "kernel_size": 3,
+            "max_dist": 8,
+            "grid_index": 2
+        },
+        "1100": {
+            "kernel_size": 5,
+            "max_dist": 15,
+            "grid_index": 5
+        },
+        "825": {
+            "kernel_size": 5,
+            "max_dist": 10,
+            "grid_index": 4
+        }
+    },
+    "azh": {
+        "550": {
+            "kernel_size": 5,
+            "max_dist": 10,
+            "grid_index": 4
+        },
+        "275": {
+            "kernel_size": 3,
+            "max_dist": 10,
+            "grid_index": 3
+        },
+        "1100": {
+            "kernel_size": 7,
+            "max_dist": 15,
+            "grid_index": 6
+        },
+        "825": {
+            "kernel_size": 5,
+            "max_dist": 15,
+            "grid_index": 5
+        }
+    },
+    "cicatrix": {
+        "550": {
+            "kernel_size": 4,
+            "max_dist": 10
+        },
+        "275": {
+            "kernel_size": 3,
+            "max_dist": 8,
+            "grid_index": 2
+        },
+        "1100": {
+            "kernel_size": 5,
+            "max_dist": 15,
+            "grid_index": 5
+        },
+        "825": {
+            "kernel_size": 5,
+            "max_dist": 10,
+            "grid_index": 4
+        }
+    },
+    "wsnet": {
+        "550": {
+            "kernel_size": 4,
+            "max_dist": 10
+        },
+        "275": {
+            "kernel_size": 3,
+            "max_dist": 8,
+            "grid_index": 2
+        },
+        "1100": {
+            "kernel_size": 5,
+            "max_dist": 15,
+            "grid_index": 5
+        },
+        "825": {
+            "kernel_size": 5,
+            "max_dist": 10,
+            "grid_index": 4
+        }
+    }
+}

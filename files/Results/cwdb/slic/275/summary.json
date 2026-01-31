@@ -1,0 +1,26 @@
+{
+  "boundary_recall": {
+    "mean": 1.4214239388756609,
+    "std": 0.19376851825223046
+  },
+  "class_homogeneity": {
+    "mean": 0.9447399326574569,
+    "std": 0.03440602179197955
+  },
+  "undersegmentation_error": {
+    "mean": 0.017501497242546734,
+    "std": 0.01195946622413712
+  },
+  "achievable_segmentation_accuracy": {
+    "mean": 0.9911961518536637,
+    "std": 0.006030126898495897
+  },
+  "num_superpixels": {
+    "mean": 1594.4074074074074,
+    "std": 715.513297195551
+  },
+  "mean_num_pixels_per_superpixels": {
+    "mean": 303.08911604518505,
+    "std": 6.986539334045341
+  }
+}
