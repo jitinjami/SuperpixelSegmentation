@@ -15,18 +15,15 @@ def main():
     parser.add_argument('--save_files', '-sf', action='store_true')
     args = parser.parse_args()
     
-    # Arguments to Key Word Arguments
     dataset = args.dataset
     num_pixel_per_spixel = args.num_pixel_per_spixel
     method = args.method
     save_files = args.save_files
     file_directory = args.file_directory
 
-    # Set Seed
     random.seed(0)
     np.random.seed(0)
 
-    # Get Dataset details
     log_dir = f'{file_directory}/Logs/'
     logger = setup_logger(log_dir=log_dir, log_file=f'{dataset}_{method}_{num_pixel_per_spixel}.log')
 
@@ -37,11 +34,9 @@ def main():
 
     os.makedirs(dirs['config_results_dir'], exist_ok=True) # Create results directory
 
-    # Setting logger
     logger.info(f"Starting superpixel comparison experiments for {dataset}")
     logger.info(f"Target no. of pixels per superpixel: {num_pixel_per_spixel}")
 
-    # Load Master Quickshift Params
     quickshift_params = {}
     master_params_path = os.path.join('config', 'master_quickshift_params.json')
     if method == 'quickshift':
@@ -57,17 +52,12 @@ def main():
         else:
             logger.warning(f"Master params file not found at {master_params_path}")
 
-    # Getting mask_colors
-    # mask_colors = get_mask_colors(logger, dirs, dataset)
     mask_colors = get_mask_dict(dataset)
 
-    # Generate Superpixels
     generate_superpixels(num_pixel_per_spixel, logger, dirs, method, save_files, **quickshift_params)
         
-    # Calculate Performance Metrics for this configuration
     final_stats = evaluate_superpixels(logger, dirs, dataset, mask_colors)
 
-    # Save Final Stats as json file
     summary_path = os.path.join(dirs['config_results_dir'], 'summary.json')
     with open(summary_path, 'w') as f:
         json.dump(final_stats, f, indent=2)

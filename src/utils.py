@@ -58,24 +58,18 @@ def get_mask_colors(logger, dirs, dataset):
         mask_filepath = os.path.join(dirs['ground_truth_dir'], mask_filename)
         mask = cv2.imread(mask_filepath)
 
-        # Convert from BGR to RGB (OpenCV uses BGR by default)
         mask_rgb = cv2.cvtColor(mask, cv2.COLOR_BGR2RGB)
         
-        # Reshape the image to get all pixels as a list
         pixels = mask_rgb.reshape(-1, 3)
         if dataset == "wsnet" or dataset == "azh":
             pixels = np.where(pixels > 128, 255, 0)
         
-        # Convert to tuples and add to set (sets automatically handle uniqueness)
         unique_colors_in_image = set(tuple(int(x) for x in pixel) for pixel in pixels) 
 
-        # Add to the overall set of unique colors
         all_unique_colors.update(unique_colors_in_image)
 
-    # Convert set to sorted list for consistent ordering
     unique_colors_list = sorted(list(all_unique_colors))
     
-    # Create dictionary with "class 1", "class 2", etc. as keys
     mask_colors = {}
     for i, color in enumerate(unique_colors_list, 1):
         mask_colors[f"class {i}"] = color
@@ -90,8 +84,6 @@ def save_labels(dirs, filename, labels):
 
 def _process_single_image_generation(dirs, filename, num_pixel_per_spixel, method, save_files, kwargs):
     """Helper to process a single image for generation."""
-    # Simplified logging (since logging from multiple processes is tricky)
-    # We will return start/end messages to be printed or ignored by main thread if needed
     
     save_path = os.path.join(dirs['spixels_path'], os.path.splitext(filename)[0]+'.npy')
     if os.path.isfile(save_path):
@@ -105,7 +97,6 @@ def _process_single_image_generation(dirs, filename, num_pixel_per_spixel, metho
 
     img_rgb = cv2.cvtColor(img_color, cv2.COLOR_BGR2RGB)
     
-    # Needs greyscale for some methods?
     image_gray = cv2.cvtColor(img_color, cv2.COLOR_BGR2GRAY) 
 
     if img_color is None or image_gray is None:
@@ -118,8 +109,6 @@ def _process_single_image_generation(dirs, filename, num_pixel_per_spixel, metho
         return f"Skipped {filename} (Image too small)"
 
     try:
-        # Dummy logger for edtrs if it requires one, or pass None if handled
-        # If edtrs requires a logger, we might need a dummy object
         class DummyLogger:
             def info(self, msg): pass
             def warning(self, msg): pass
@@ -169,7 +158,6 @@ def generate_superpixels(num_pixel_per_spixel, logger, dirs, method, save_files,
         ) for filename in filenames
     )
     
-    # Log summary
     for res in results:
         if "Skipped" in res:
             logger.info(res)
@@ -236,7 +224,6 @@ def _process_single_image_evaluation(dirs, superpixel_file, dataset, mask_colors
              
         img_rgb = cv2.cvtColor(img_color, cv2.COLOR_BGR2RGB)
 
-        # Load and resize ground truth
         ground_truth_path = os.path.join(dirs['ground_truth_dir'], mask_filename)
         ground_truth = cv2.imread(ground_truth_path)
         
@@ -252,12 +239,10 @@ def _process_single_image_evaluation(dirs, superpixel_file, dataset, mask_colors
         if img_rgb.shape[0] != ground_truth.shape[0]:
             ground_truth = cv2.resize(ground_truth, (img_rgb.shape[0], img_rgb.shape[1]), interpolation=cv2.INTER_NEAREST)
 
-        # Timing individual metrics
         individual_eval_results = performance.evaluation(img_rgb, label, ground_truth, mask_colors)
         
         timing_str = individual_eval_results.pop('_timing_str', "")
         
-        # Store individual results with filename
         result_entry = {'filename': superpixel_file}
         result_entry.update(individual_eval_results)
         
@@ -277,7 +262,6 @@ def evaluate_superpixels(logger, dirs, dataset, mask_colors):
     
     border_metrics = False
 
-    # For cicatrix, calculate values specifically for the border class, "class 2" and "class 3"
     if dataset == "cicatrix":
         border_metrics = True
 
@@ -291,14 +275,12 @@ def evaluate_superpixels(logger, dirs, dataset, mask_colors):
     
     logger.info(f"Starting parallel evaluation for {len(files)} files using {effective_jobs} threads...")
     
-    # Run parallel evaluation
     results_generator = Parallel(n_jobs=n_jobs, return_as='generator')(
         delayed(_process_single_image_evaluation)(
             dirs, f, dataset, mask_colors, performance
         ) for f in files
     )
 
-    # Process results
     valid_results = []
     
     for res in results_generator:
@@ -312,20 +294,16 @@ def evaluate_superpixels(logger, dirs, dataset, mask_colors):
             
         valid_results.append(res)
         
-        # Aggregate for summary stats
         for key, value in res.items():
             if key == 'filename': continue
             if key not in eval_results:
                 eval_results[key] = []
             eval_results[key].append(value)
     
-    # Save individual results to CSV
     if valid_results:
         csv_path = os.path.join(dirs['config_results_dir'], 'results.csv')
         try:
-            # Determine fieldnames dynamically from the first valid result
             fieldnames = list(valid_results[0].keys())
-            # Ensure filename is first
             if 'filename' in fieldnames:
                 fieldnames.remove('filename')
                 fieldnames = ['filename'] + fieldnames

@@ -155,36 +155,3 @@ class EdgeDetectionProcessor:
             self.generate_final_edge_image()
         except Exception as e:
             self.logger.error(f"Error in process_edges: {e}")
-
-    # def visualize_results(self, output_path='edge_detection.png'):
-    #     """
-    #     Visualize edge detection results.
-    #     """
-    #     try:
-    #         fig, axes = plt.subplots(2, 3, figsize=(15, 10))
-
-    #         axes[0, 0].imshow(self.image)
-    #         axes[0, 0].set_title('Original Image')
-
-    #         axes[0, 1].imshow(self.edge_intensity.mean(axis=2), cmap='jet')
-    #         axes[0, 1].set_title('Edge Intensity')
-
-    #         axes[0, 2].imshow(self.sobel_edges.mean(axis=2), cmap='jet')
-    #         axes[0, 2].set_title('Sobel Edge Map')
-
-    #         axes[1, 0].imshow(self.entropy_map.mean(axis=2), cmap='jet')
-    #         axes[1, 0].set_title('Entropy Map')
-
-    #         axes[1, 1].imshow(self.K_grid.mean(axis=2), cmap='jet')
-    #         axes[1, 1].set_title('K* Grid')
-
-    #         axes[1, 2].imshow(self.final_edge_image)
-    #         axes[1, 2].set_title('Final Edge Image')
-
-    #         plt.tight_layout()
-    #         output_path = './TEST/edge_detection.png'
-            
-    #         plt.savefig(output_path, dpi=300, bbox_inches="tight")
-    #         plt.close(fig)
-    #     except Exception as e:
-    #         self.logger.error(f"Error in visualize_results: {e}")

@@ -48,17 +48,12 @@ class PerformanceMeasures:
         return labels, border_only_labels
 
     def _get_contingency_matrix(self, superpixel_labels, ground_truth_labels):
-        # Flatten images to 1D
         sp_flat = superpixel_labels.ravel()
         gt_flat = ground_truth_labels.ravel()
         
-        # Get range of labels
-        # We add 1 to max to ensure the bins include the highest label
         n_sp = sp_flat.max() + 1
         n_gt = gt_flat.max() + 1
         
-        # Compute the 2D histogram
-        # Result: matrix[i, j] = count of pixels where SP_id == i and GT_id == j
         contingency, _, _ = np.histogram2d(
             sp_flat, gt_flat, 
             bins=(n_sp, n_gt), 
@@ -80,16 +75,12 @@ class PerformanceMeasures:
         Returns:
             float: Boundary recall score (higher is better)
         """
-        # Find boundaries
         sp_boundaries = find_boundaries(superpixel_labels, mode='thick')
         gt_boundaries = find_boundaries(ground_truth, mode='thick')
-        
-        # Apply tolerance by dilating ground truth boundaries
+            
         kernel = np.ones((2*self.tolerance_radius+1, 2*self.tolerance_radius+1), np.uint8)
         dilated_gt_boundaries = cv2.dilate(gt_boundaries.astype(np.uint8), kernel, iterations=1)
         
-        # Pixel-level: Counts boundary pixels that overlap within tolerance
-        # Range: 0-1 (higher = better boundary adherence)
         true_positive_edges = np.sum(sp_boundaries & dilated_gt_boundaries.astype(bool))
         total_gt_edges = np.sum(gt_boundaries)
         
@@ -99,40 +90,28 @@ class PerformanceMeasures:
         return true_positive_edges / total_gt_edges
     
     def calculate_asa_fast(self, contingency, superpixel_labels_size):
-        # Sum of maximum intersection in each row (superpixel)
         max_overlaps = np.max(contingency, axis=1)
     
         return np.sum(max_overlaps) / superpixel_labels_size
 
     def calculate_ue_fast(self, contingency, superpixel_labels_size):
     
-        # Size of each superpixel (sum of its overlaps with all GT)
         sp_sizes = np.sum(contingency, axis=1, keepdims=True) # Column vector
-    
-        # Matrix of 'differences': size of superpixel MINUS the intersection with specific GT
         differences = sp_sizes - contingency
     
-        # Logic: min(|S_i ∩ G_j|, |S_i - G_j|) for all overlaps
-        # We only care where contingency > 0 (overlap exists)
         error_matrix = np.minimum(contingency, differences)
     
         return np.sum(error_matrix) / superpixel_labels_size
     
     def calculate_ch_fast(self, contingency):
 
-        # Sum across rows to find pixels per superpixel
-        # This helps us filter out SP IDs that don't exist in the image
         sp_sizes = np.sum(contingency, axis=1)
         existing_sp_mask = sp_sizes > 0
         
-        # Filter the matrix to only include active superpixels
         active_contingency = contingency[existing_sp_mask]
 
-        # For each superpixel (row), count how many GT classes have > 0 pixels
-        # np.count_nonzero returns the number of GT classes present in each SP
         unique_class_counts = np.count_nonzero(active_contingency, axis=1)
 
-        # A superpixel is 'pure' if it only contains 1 GT class
         pure_superpixels = np.sum(unique_class_counts == 1)
         total_superpixels = active_contingency.shape[0]
 
@@ -153,19 +132,16 @@ class PerformanceMeasures:
         """
         metrics = {}
         
-        # Handle RGB ground truth
         if len(ground_truth.shape) == 3 and tissue_colors:
             gt_labels, _ = self._rgb_to_labels(ground_truth, tissue_colors)
         else:
             gt_labels = ground_truth
         
-        # Handle Superpixel shape
         if len(superpixel_labels.shape) == 3:
             superpixel_labels = np.squeeze(superpixel_labels, axis = 0)
 
         contingency = self._get_contingency_matrix(superpixel_labels, gt_labels)
         
-        # Standard supervised superpixel metrics
         t0 = time.time()
         metrics['boundary_recall'] = self.boundary_recall(superpixel_labels, gt_labels)
         t_br = time.time() - t0
@@ -182,11 +158,9 @@ class PerformanceMeasures:
         metrics['achievable_segmentation_accuracy'] = self.calculate_asa_fast(contingency, superpixel_labels.size)
         t_asa = time.time() - t0
 
-        # Count metrics
         metrics['num_superpixels'] = len(np.unique(superpixel_labels))
         metrics['mean_num_pixels_per_superpixels'] = np.mean(np.unique(superpixel_labels, return_counts=True)[1])
         
-        # Create timing string
         timing_str = (f"BR: {t_br:.4f}s, CH: {t_ch:.4f}s, UE: {t_ue:.4f}s, ASA: {t_asa:.4f}s")
         metrics['_timing_str'] = timing_str
         

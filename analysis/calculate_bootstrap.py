@@ -17,20 +17,14 @@ def calculate_bootstraps(base_dir="../files/Results"):
         print(f"\nProcessing dataset: {dataset}")
         dataset_path = os.path.join(base_dir, dataset)
         
-        # 1. Discover all images for this dataset to define the master list
-        # We'll look for the first valid results.csv we can find to establish the universe of files
         master_filenames = set()
         
-        # Walk to find a results.csv
         for root, dirs, files in os.walk(dataset_path):
             if 'results.csv' in files:
                 try:
                     df = pd.read_csv(os.path.join(root, 'results.csv'))
                     if 'filename' in df.columns:
                         master_filenames.update(df['filename'].tolist())
-                        # We only need one good list, assuming all methods process the same dataset. 
-                        # To be safe, let's keep it cumulative or just stop at the first big one?
-                        # Usually datasets are static. Let's trust the first non-empty one.
                         if len(master_filenames) > 0:
                             break
                 except Exception as e:
@@ -44,22 +38,17 @@ def calculate_bootstraps(base_dir="../files/Results"):
             
         print(f"Found {num_images} unique images in results.")
 
-        # 2. Generate 100 consistent bootstrap masks (80% subsampling)
-        # We store the *list of filenames* for each bootstrap iteration
         n_bootstraps = 100
         sample_size = int(0.8 * num_images)
         bootstrap_sets = []
         
-        # Seed based on dataset name for reproducibility across runs
-        # Use a deterministic seed derived from dataset name
         seed_base = sum(ord(c) for c in dataset) 
         
         for i in range(n_bootstraps):
-            random.seed(seed_base + i) # Ensure consistency for "dataset + bootstrap_i"
+            random.seed(seed_base + i) 
             subset = random.sample(master_filenames, sample_size)
-            bootstrap_sets.append(set(subset)) # Use set for O(1) lookup
+            bootstrap_sets.append(set(subset)) 
 
-        # 3. Process all experiments in this dataset
         for method in os.listdir(dataset_path):
             method_path = os.path.join(dataset_path, method)
             if not os.path.isdir(method_path) or method.startswith('.'):
@@ -77,12 +66,9 @@ def calculate_bootstraps(base_dir="../files/Results"):
                     if df.empty or 'filename' not in df.columns:
                         continue
                     
-                    # Prepare storage for this experiment
                     bootstrap_summary = {m: [] for m in metrics}
                     
-                    # Calculate mean for each bootstrap
                     for i, allowed_files in enumerate(bootstrap_sets):
-                        # Filter dataframe (Faster lookup)
                         filtered_df = df[df['filename'].apply(lambda x: x in allowed_files)]
                         
                         if filtered_df.empty:
@@ -98,7 +84,6 @@ def calculate_bootstraps(base_dir="../files/Results"):
                             else:
                                 bootstrap_summary[metric].append(None)
                     
-                    # Calculate Aggregated Stats
                     final_output = {
                         "individual_bootstraps": bootstrap_summary,
                         "aggregated_stats": {}
@@ -114,11 +99,8 @@ def calculate_bootstraps(base_dir="../files/Results"):
                         else:
                             final_output["aggregated_stats"][metric] = {"mean": None, "std": None}
 
-                    # Save summary_bootstrap.json
                     output_path = os.path.join(num_pixels_path, "summary_bootstrap.json")
                     
-                    # Serialize
-                    # Handle NaNs/Nones for JSON
                     class NpEncoder(json.JSONEncoder):
                         def default(self, obj):
                             if isinstance(obj, np.integer):

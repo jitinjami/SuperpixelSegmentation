@@ -70,14 +70,11 @@ def visualize_separate_images(logger, base_dirs, dataset, methods, num_pixels,
     logger.info("CREATING SEPARATE VISUALIZATIONS")
     logger.info(f"{'='*50}")
     
-    # Get class colors for this dataset
     class_colors = get_class_colors(dataset)
     
-    # Create output directory
     output_dir = os.path.join(base_dirs['output_dir'], f'separate_{num_pixels}')
     os.makedirs(output_dir, exist_ok=True)
     
-    # Get file extension based on dataset
     if dataset == 'cicatrix':
         img_ext, mask_ext = '.JPG', '.png'
     elif dataset == "wsnet":
@@ -87,7 +84,6 @@ def visualize_separate_images(logger, base_dirs, dataset, methods, num_pixels,
     else:
         img_ext, mask_ext = '.png', '.png'
     
-    # Get all images
     image_files = sorted([f for f in os.listdir(base_dirs['dataset_dir']) if f.endswith(img_ext)])
     
     for i, img_file in enumerate(image_files):
@@ -96,11 +92,9 @@ def visualize_separate_images(logger, base_dirs, dataset, methods, num_pixels,
         try:
             base_name = os.path.splitext(img_file)[0]
             
-            # Create subdirectory for this image
             img_output_dir = os.path.join(output_dir, base_name)
             os.makedirs(img_output_dir, exist_ok=True)
             
-            # Load original image
             image_path = os.path.join(base_dirs['dataset_dir'], img_file)
             img_color = cv2.imread(image_path)
             if img_color is None:
@@ -108,7 +102,6 @@ def visualize_separate_images(logger, base_dirs, dataset, methods, num_pixels,
                 continue
             img_rgb = cv2.cvtColor(img_color, cv2.COLOR_BGR2RGB)
             
-            # Load ground truth mask
             mask_file = base_name + mask_ext
             mask_path = os.path.join(base_dirs['ground_truth_dir'], mask_file)
             mask = cv2.imread(mask_path)
@@ -131,8 +124,6 @@ def visualize_separate_images(logger, base_dirs, dataset, methods, num_pixels,
                 logger.warning(f"Could not load mask: {mask_path}, skipping this image")
                 continue
 
-            # Create the base image with the colored mask overlay *once* per image
-            # This will be used for visualizations 1 and 3
             img_with_overlay = img_rgb.astype(np.float32).copy()
             for class_name, class_color in class_colors.items():
                 class_mask = np.all(mask_rgb == class_color, axis=2)
@@ -145,9 +136,7 @@ def visualize_separate_images(logger, base_dirs, dataset, methods, num_pixels,
                                           img_with_overlay)
             img_with_overlay = np.clip(img_with_overlay, 0, 255).astype(np.uint8)
             
-            # 1. Save: Original + GT boundaries + colored mask overlay
             try:
-                # Start with the pre-made overlay image and just add boundaries
                 vis_overlay = img_with_overlay.copy()
                 vis_overlay[gt_boundaries] = gt_boundary_color
                 
@@ -157,7 +146,6 @@ def visualize_separate_images(logger, base_dirs, dataset, methods, num_pixels,
             except Exception as e:
                 logger.error(f"Error creating GT overlay for {img_file}: {str(e)}")
             
-            # 2. Save: Original + GT boundaries only
             try:
                 vis_gt_only = img_rgb.copy()
                 vis_gt_only[gt_boundaries] = gt_boundary_color
@@ -168,10 +156,8 @@ def visualize_separate_images(logger, base_dirs, dataset, methods, num_pixels,
             except Exception as e:
                 logger.error(f"Error creating GT boundaries only for {img_file}: {str(e)}")
             
-            # 3. Save: Each method with GT + superpixel boundaries + GT OVERLAY
             for method in methods:
                 try:
-                    # Load superpixel labels for this method
                     spixel_file = base_name + '.npy'
                     spixel_path = os.path.join(
                         base_dirs['file_directory'], 
@@ -185,17 +171,13 @@ def visualize_separate_images(logger, base_dirs, dataset, methods, num_pixels,
                     
                     label = np.load(spixel_path)
                     
-                    # Create visualization starting from the image *with the overlay*
                     vis_method = img_with_overlay.copy()
                     
-                    # Add GT boundaries (yellow)
                     vis_method[gt_boundaries] = gt_boundary_color
                     
-                    # Add superpixel boundaries (green)
                     spixel_boundaries = find_boundaries(label, mode='thick')
                     vis_method[spixel_boundaries] = spixel_boundary_color
                     
-                    # Use a more descriptive filename
                     save_path = os.path.join(img_output_dir, f'{method}_overlay_boundaries.jpg')
                     plt.imsave(save_path, vis_method, format='jpg', dpi=150)
                     logger.info(f"  Saved: {method}_overlay_boundaries.jpg")
@@ -224,22 +206,18 @@ def main():
     
     args = parser.parse_args()
     
-    # Setup
     dataset = args.dataset
     num_pixels = args.num_pixel
     file_directory = args.file_directory
     mask_alpha = args.mask_alpha
     
-    # All methods to visualize
     methods = ['edtrs', 'slic', 'felzenszwalb', 'watershed', 'quickshift']
     
-    # Setup logger
     log_dir = f'{file_directory}/Logs/'
     os.makedirs(log_dir, exist_ok=True)
     logger = setup_logger(log_dir=log_dir, 
                          log_file=f'visualization_separate_{dataset}_{num_pixels}.log')
     
-    # Setup directories
     base_dirs = {
         'dataset_dir': f'{file_directory}/Data/{dataset}/images',
         'ground_truth_dir': f'{file_directory}/Data/{dataset}/rgb_masks',
@@ -247,7 +225,6 @@ def main():
         'output_dir': f'{file_directory}/Visualizations/{dataset}'
     }
     
-    # Verify directories exist
     for key, path in base_dirs.items():
         if key != 'output_dir' and not os.path.exists(path):
             logger.error(f"Directory not found: {path}")
@@ -258,7 +235,6 @@ def main():
     logger.info(f"Methods: {', '.join(methods)}")
     logger.info(f"Mask overlay alpha: {mask_alpha}")
     
-    # Create visualizations
     visualize_separate_images(logger, base_dirs, dataset, methods, num_pixels, mask_alpha)
     
     logger.info("Visualization complete!")
@@ -267,8 +243,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-# Usage:
-# python viz.py -d cicatrix -n 600
-# python viz.py -d cicatrix -n 600 -ma 0.5  # Custom transparency
-# python viz.py -d cicatrix -n 600 -fd ./files -ma 0.5

@@ -15,7 +15,6 @@ def generate_superpixels_quickshift(kernel_size, max_dist, logger, dirs, save_fi
     
     filenames = sorted(os.listdir(dirs['dataset_dir']))
 
-    # Process all images
     for i, filename in enumerate(filenames):
         try: 
             save_path = os.path.join(dirs['spixels_path'], os.path.splitext(filename)[0]+'.npy')
@@ -34,7 +33,6 @@ def generate_superpixels_quickshift(kernel_size, max_dist, logger, dirs, save_fi
 
             img_rgb = cv2.cvtColor(img_color, cv2.COLOR_BGR2RGB)
 
-            # Quickshift specific call
             labels = quickshift(img_rgb, kernel_size=kernel_size, max_dist=max_dist, ratio=1.0)
             
             num_superpixels = len(np.unique(labels))
